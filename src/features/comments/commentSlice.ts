@@ -1,0 +1,287 @@
+import type { PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import * as commentAPI from "../../services/api";
+import type {
+  Comment,
+  CreateCommentData,
+  PaginationParams,
+  SortOption,
+  UpdateCommentData,
+} from "../../types";
+
+interface CommentState {
+  comments: Comment[];
+  currentComment: Comment | null;
+  loading: boolean;
+  error: string | null;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalComments: number;
+    limit: number;
+  };
+  sortBy: SortOption;
+  replyingTo: string | null;
+}
+
+const initialState: CommentState = {
+  comments: [],
+  currentComment: null,
+  loading: false,
+  error: null,
+  pagination: {
+    currentPage: 1,
+    totalPages: 1,
+    totalComments: 0,
+    limit: 10,
+  },
+  sortBy: "newest",
+  replyingTo: null,
+};
+
+// Async thunks
+export const fetchComments = createAsyncThunk(
+  "comments/fetchComments",
+  async (params: PaginationParams, { rejectWithValue }) => {
+    try {
+      const response = await commentAPI.getComments(params);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch comments"
+      );
+    }
+  }
+);
+
+export const fetchCommentById = createAsyncThunk(
+  "comments/fetchCommentById",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await commentAPI.getCommentById(id);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch comment"
+      );
+    }
+  }
+);
+
+export const fetchCommentReplies = createAsyncThunk(
+  "comments/fetchCommentReplies",
+  async (
+    {
+      commentId,
+      page,
+      limit,
+    }: { commentId: string; page: number; limit: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await commentAPI.getCommentReplies(
+        commentId,
+        page,
+        limit
+      );
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch replies"
+      );
+    }
+  }
+);
+
+export const createComment = createAsyncThunk(
+  "comments/createComment",
+  async (data: CreateCommentData, { rejectWithValue }) => {
+    try {
+      const response = await commentAPI.createComment(data);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to create comment"
+      );
+    }
+  }
+);
+
+export const updateComment = createAsyncThunk(
+  "comments/updateComment",
+  async (
+    { id, data }: { id: string; data: UpdateCommentData },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await commentAPI.updateComment(id, data);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update comment"
+      );
+    }
+  }
+);
+
+export const deleteComment = createAsyncThunk(
+  "comments/deleteComment",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await commentAPI.deleteComment(id);
+      return id;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to delete comment"
+      );
+    }
+  }
+);
+
+export const likeComment = createAsyncThunk(
+  "comments/likeComment",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await commentAPI.likeComment(id);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to like comment"
+      );
+    }
+  }
+);
+
+export const dislikeComment = createAsyncThunk(
+  "comments/dislikeComment",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await commentAPI.dislikeComment(id);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to dislike comment"
+      );
+    }
+  }
+);
+
+const commentSlice = createSlice({
+  name: "comments",
+  initialState,
+  reducers: {
+    setSortBy: (state, action: PayloadAction<SortOption>) => {
+      state.sortBy = action.payload;
+    },
+    setReplyingTo: (state, action: PayloadAction<string | null>) => {
+      state.replyingTo = action.payload;
+    },
+    clearError: (state) => {
+      state.error = null;
+    },
+    addCommentOptimistic: (state, action: PayloadAction<Comment>) => {
+      state.comments.unshift(action.payload);
+    },
+    updateCommentOptimistic: (state, action: PayloadAction<Comment>) => {
+      const index = state.comments.findIndex(
+        (c) => c._id === action.payload._id
+      );
+      if (index !== -1) {
+        state.comments[index] = action.payload;
+      }
+    },
+  },
+  extraReducers: (builder) => {
+    // Fetch comments
+    builder
+      .addCase(fetchComments.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchComments.fulfilled, (state, action) => {
+        state.loading = false;
+        state.comments = action.payload.comments;
+        state.pagination = action.payload.pagination;
+      })
+      .addCase(fetchComments.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    // Fetch comment by ID
+    builder.addCase(fetchCommentById.fulfilled, (state, action) => {
+      state.currentComment = action.payload.comment;
+    });
+
+    // Fetch comment replies
+    builder.addCase(fetchCommentReplies.fulfilled, (state) => {
+      // Replies will be handled separately
+      state.loading = false;
+    });
+
+    // Create comment
+    builder
+      .addCase(createComment.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createComment.fulfilled, (state, action) => {
+        state.loading = false;
+        // If it's a top-level comment, add it to the list
+        if (!action.payload.comment.parentComment) {
+          state.comments.unshift(action.payload.comment);
+          state.pagination.totalComments += 1;
+        }
+        state.replyingTo = null;
+      })
+      .addCase(createComment.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    // Update comment
+    builder.addCase(updateComment.fulfilled, (state, action) => {
+      const index = state.comments.findIndex(
+        (c) => c._id === action.payload.comment._id
+      );
+      if (index !== -1) {
+        state.comments[index] = action.payload.comment;
+      }
+    });
+
+    // Delete comment
+    builder.addCase(deleteComment.fulfilled, (state, action) => {
+      state.comments = state.comments.filter((c) => c._id !== action.payload);
+      state.pagination.totalComments -= 1;
+    });
+
+    // Like comment
+    builder.addCase(likeComment.fulfilled, (state, action) => {
+      const index = state.comments.findIndex(
+        (c) => c._id === action.payload.comment._id
+      );
+      if (index !== -1) {
+        state.comments[index] = action.payload.comment;
+      }
+    });
+
+    // Dislike comment
+    builder.addCase(dislikeComment.fulfilled, (state, action) => {
+      const index = state.comments.findIndex(
+        (c) => c._id === action.payload.comment._id
+      );
+      if (index !== -1) {
+        state.comments[index] = action.payload.comment;
+      }
+    });
+  },
+});
+
+export const {
+  setSortBy,
+  setReplyingTo,
+  clearError,
+  addCommentOptimistic,
+  updateCommentOptimistic,
+} = commentSlice.actions;
+export default commentSlice.reducer;
