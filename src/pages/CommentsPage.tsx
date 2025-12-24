@@ -6,6 +6,7 @@ import Pagination from '../components/Pagination';
 import SortMenu from '../components/SortMenu';
 import { useAuth } from '../context/AuthContext';
 import { fetchComments, setSortBy } from '../features/comments/commentSlice';
+import { useSocket } from '../hooks/useSocket';
 import type { SortOption } from '../types';
 import './CommentsPage.scss';
 
@@ -14,6 +15,9 @@ const CommentsPage: React.FC = () => {
   const { user, logout } = useAuth();
   const { pagination = { limit: 10, currentPage: 1, totalPages: 1, totalComments: 0 }, sortBy, loading } = useAppSelector((state) => state.comments);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Enable real-time updates via WebSocket
+  useSocket();
 
   useEffect(() => {
     // Fetch comments when page, sort or limit changes

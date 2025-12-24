@@ -181,6 +181,7 @@ const commentSlice = createSlice({
     },
     addCommentOptimistic: (state, action: PayloadAction<Comment>) => {
       state.comments.unshift(action.payload);
+      state.pagination.totalComments += 1;
     },
     updateCommentOptimistic: (state, action: PayloadAction<Comment>) => {
       const index = state.comments.findIndex(
@@ -188,6 +189,31 @@ const commentSlice = createSlice({
       );
       if (index !== -1) {
         state.comments[index] = action.payload;
+      }
+    },
+    removeComment: (state, action: PayloadAction<string>) => {
+      state.comments = state.comments.filter((c) => c._id !== action.payload);
+      state.pagination.totalComments -= 1;
+    },
+    updateCommentCounts: (
+      state,
+      action: PayloadAction<{
+        commentId: string;
+        likesCount: number;
+        dislikesCount: number;
+      }>
+    ) => {
+      const index = state.comments.findIndex(
+        (c) => c._id === action.payload.commentId
+      );
+      if (index !== -1) {
+        state.comments[index] = {
+          ...state.comments[index],
+          likesCount: action.payload.likesCount,
+          dislikesCount: action.payload.dislikesCount,
+          likes: new Array(action.payload.likesCount).fill(""),
+          dislikes: new Array(action.payload.dislikesCount).fill(""),
+        };
       }
     },
   },
@@ -306,5 +332,7 @@ export const {
   clearError,
   addCommentOptimistic,
   updateCommentOptimistic,
+  removeComment,
+  updateCommentCounts,
 } = commentSlice.actions;
 export default commentSlice.reducer;
