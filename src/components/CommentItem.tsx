@@ -16,9 +16,11 @@ import './CommentItem.scss';
 interface CommentItemProps {
   comment: Comment;
   isReply?: boolean;
+  onReplyUpdate?: (updatedReply: Comment) => void;
+  onReplyDelete?: (deletedReplyId: string) => void;
 }
 
-const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false }) => {
+const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false, onReplyUpdate, onReplyDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [showReplies, setShowReplies] = useState(false);
@@ -80,13 +82,22 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false }) =
     if (!editContent.trim()) return;
 
     try {
-      await dispatch(
+      const result = await dispatch(
         updateComment({
           id: comment._id,
           data: { content: editContent.trim() },
         })
       ).unwrap();
       setIsEditing(false);
+      
+      // If this is a reply and we have a callback, notify the parent
+      if (isReply && onReplyUpdate && result) {
+        const responseData = result.data || result;
+        const updatedComment = responseData.comment || responseData.data?.comment;
+        if (updatedComment) {
+          onReplyUpdate(updatedComment);
+        }
+      }
     } catch (error) {
       console.error('Failed to update comment:', error);
     }
@@ -96,6 +107,11 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false }) =
     if (window.confirm('Are you sure you want to delete this comment?')) {
       try {
         await dispatch(deleteComment(comment._id)).unwrap();
+        
+        // If this is a reply and we have a callback, notify the parent
+        if (isReply && onReplyDelete) {
+          onReplyDelete(comment._id);
+        }
       } catch (error) {
         console.error('Failed to delete comment:', error);
       }
@@ -104,7 +120,16 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false }) =
 
   const handleLike = async () => {
     try {
-      await dispatch(likeComment(comment._id)).unwrap();
+      const result = await dispatch(likeComment(comment._id)).unwrap();
+      
+      // Extract the updated comment from the response
+      const responseData = result.data || result;
+      const updatedComment = responseData.comment || responseData.data?.comment;
+      
+      // If this is a reply and we have a callback, notify the parent
+      if (isReply && onReplyUpdate && updatedComment) {
+        onReplyUpdate(updatedComment);
+      }
     } catch (error) {
       console.error('Failed to like comment:', error);
     }
@@ -112,7 +137,16 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false }) =
 
   const handleDislike = async () => {
     try {
-      await dispatch(dislikeComment(comment._id)).unwrap();
+      const result = await dispatch(dislikeComment(comment._id)).unwrap();
+      
+      // Extract the updated comment from the response
+      const responseData = result.data || result;
+      const updatedComment = responseData.comment || responseData.data?.comment;
+      
+      // If this is a reply and we have a callback, notify the parent
+      if (isReply && onReplyUpdate && updatedComment) {
+        onReplyUpdate(updatedComment);
+      }
     } catch (error) {
       console.error('Failed to dislike comment:', error);
     }
@@ -137,7 +171,12 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false }) =
           limit: 10,
         })
       ).unwrap();
-      setReplies(response.comments);
+      
+      // Backend response structure: { status: "success", data: { comments: [...], pagination: {...} } }
+      const repliesData = response.data?.comments || [];
+      console.log('Full response:', response); // Debug log
+      console.log('Loaded replies:', repliesData); // Debug log
+      setReplies(repliesData);
       setShowReplies(true);
     } catch (error) {
       console.error('Failed to load replies:', error);
@@ -147,10 +186,25 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false }) =
   };
 
   const handleReplySuccess = () => {
-    // Reload replies after successful reply
-    if (showReplies) {
-      loadReplies();
-    }
+    // Reload replies after successful reply, and show them if hidden
+    setShowReplies(false); // Reset state first
+    loadReplies(); // This will fetch and show replies
+  };
+
+  const handleReplyUpdate = (updatedReply: Comment) => {
+    // Update the specific reply in the local state
+    setReplies(prevReplies => 
+      prevReplies.map(reply => 
+        reply._id === updatedReply._id ? updatedReply : reply
+      )
+    );
+  };
+
+  const handleReplyDelete = (deletedReplyId: string) => {
+    // Remove the deleted reply from the local state
+    setReplies(prevReplies => 
+      prevReplies.filter(reply => reply._id !== deletedReplyId)
+    );
   };
 
   return (
@@ -221,13 +275,15 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false }) =
           )}
         </div>
 
-        {!isReply && (comment.repliesCount || 0) > 0 && (
+        {!isReply && (
           <button onClick={loadReplies} className="show-replies-btn">
             {loadingReplies
               ? 'Loading...'
               : showReplies
-              ? `Hide replies`
-              : `View ${comment.repliesCount} ${comment.repliesCount === 1 ? 'reply' : 'replies'}`}
+              ? `Hide replies ${replies.length > 0 ? `(${replies.length})` : ''}`
+              : comment.repliesCount
+              ? `View ${comment.repliesCount} ${comment.repliesCount === 1 ? 'reply' : 'replies'}`
+              : 'View replies'}
           </button>
         )}
       </div>
@@ -238,11 +294,21 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false }) =
         </div>
       )}
 
-      {showReplies && replies.length > 0 && (
+      {showReplies && (
         <div className="replies-section">
-          {replies.map((reply) => (
-            <CommentItem key={reply._id} comment={reply} isReply={true} />
-          ))}
+          {replies.length > 0 ? (
+            replies.map((reply) => (
+              <CommentItem 
+                key={reply._id} 
+                comment={reply} 
+                isReply={true}
+                onReplyUpdate={handleReplyUpdate}
+                onReplyDelete={handleReplyDelete}
+              />
+            ))
+          ) : (
+            <div className="no-replies">No replies yet. Be the first to reply!</div>
+          )}
         </div>
       )}
     </div>
