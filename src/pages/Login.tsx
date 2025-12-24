@@ -1,32 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../app/hooks';
-import { clearError, login } from '../features/auth/authSlice';
-import type { LoginCredentials } from '../types';
+import { useAuth } from '../context/AuthContext';
 import './Auth.scss';
 
+interface LoginFormData {
+  email: string;
+  password: string;
+}
+
 const Login: React.FC = () => {
-  const [formData, setFormData] = useState<LoginCredentials>({
+  const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { loading, error, isAuthenticated } = useAppSelector((state: any) => state.auth);
+  const { login, loading, error, isAuthenticated, clearError } = useAuth();
 
   useEffect(() => {
+    console.log('Login - isAuthenticated changed:', isAuthenticated);
     if (isAuthenticated) {
+      console.log('Navigating to /comments');
       navigate('/comments');
     }
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     return () => {
-      dispatch(clearError());
+      clearError();
     };
-  }, [dispatch]);
+  }, [clearError]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -52,15 +56,22 @@ const Login: React.FC = () => {
       return;
     }
 
-    await dispatch(login(formData));
+    try {
+      console.log('Attempting login with:', formData.email);
+      await login(formData.email, formData.password);
+      console.log('Login completed successfully');
+    } catch (err) {
+      console.error('Login failed:', err);
+      // Error is already set in context
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev: any) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     // Clear error for this field
     if (errors[name]) {
-      setErrors((prev: any) => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 

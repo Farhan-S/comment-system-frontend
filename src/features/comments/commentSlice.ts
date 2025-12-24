@@ -200,8 +200,10 @@ const commentSlice = createSlice({
       })
       .addCase(fetchComments.fulfilled, (state, action) => {
         state.loading = false;
-        state.comments = action.payload.comments;
-        state.pagination = action.payload.pagination;
+        // Backend returns: { status: "success", data: { comments: [...], pagination: {...} } }
+        const data = action.payload.data || action.payload;
+        state.comments = data.comments || [];
+        state.pagination = data.pagination || state.pagination;
       })
       .addCase(fetchComments.rejected, (state, action) => {
         state.loading = false;
@@ -210,7 +212,9 @@ const commentSlice = createSlice({
 
     // Fetch comment by ID
     builder.addCase(fetchCommentById.fulfilled, (state, action) => {
-      state.currentComment = action.payload.comment;
+      const responseData = action.payload.data || action.payload;
+      state.currentComment =
+        responseData.comment || responseData.data?.comment || null;
     });
 
     // Fetch comment replies
@@ -227,9 +231,12 @@ const commentSlice = createSlice({
       })
       .addCase(createComment.fulfilled, (state, action) => {
         state.loading = false;
+        const responseData = action.payload.data || action.payload;
+        const newComment = responseData.comment || responseData.data?.comment;
+
         // If it's a top-level comment, add it to the list
-        if (!action.payload.comment.parentComment) {
-          state.comments.unshift(action.payload.comment);
+        if (newComment && !newComment.parentComment) {
+          state.comments.unshift(newComment);
           state.pagination.totalComments += 1;
         }
         state.replyingTo = null;
@@ -241,11 +248,16 @@ const commentSlice = createSlice({
 
     // Update comment
     builder.addCase(updateComment.fulfilled, (state, action) => {
-      const index = state.comments.findIndex(
-        (c) => c._id === action.payload.comment._id
-      );
-      if (index !== -1) {
-        state.comments[index] = action.payload.comment;
+      const responseData = action.payload.data || action.payload;
+      const updatedComment = responseData.comment || responseData.data?.comment;
+
+      if (updatedComment) {
+        const index = state.comments.findIndex(
+          (c) => c._id === updatedComment._id
+        );
+        if (index !== -1) {
+          state.comments[index] = updatedComment;
+        }
       }
     });
 
@@ -257,21 +269,32 @@ const commentSlice = createSlice({
 
     // Like comment
     builder.addCase(likeComment.fulfilled, (state, action) => {
-      const index = state.comments.findIndex(
-        (c) => c._id === action.payload.comment._id
-      );
-      if (index !== -1) {
-        state.comments[index] = action.payload.comment;
+      const responseData = action.payload.data || action.payload;
+      const likedComment = responseData.comment || responseData.data?.comment;
+
+      if (likedComment) {
+        const index = state.comments.findIndex(
+          (c) => c._id === likedComment._id
+        );
+        if (index !== -1) {
+          state.comments[index] = likedComment;
+        }
       }
     });
 
     // Dislike comment
     builder.addCase(dislikeComment.fulfilled, (state, action) => {
-      const index = state.comments.findIndex(
-        (c) => c._id === action.payload.comment._id
-      );
-      if (index !== -1) {
-        state.comments[index] = action.payload.comment;
+      const responseData = action.payload.data || action.payload;
+      const dislikedComment =
+        responseData.comment || responseData.data?.comment;
+
+      if (dislikedComment) {
+        const index = state.comments.findIndex(
+          (c) => c._id === dislikedComment._id
+        );
+        if (index !== -1) {
+          state.comments[index] = dislikedComment;
+        }
       }
     });
   },

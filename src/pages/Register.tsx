@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../app/hooks.ts';
-import { clearError, register } from '../features/auth/authSlice';
-import type { RegisterCredentials } from '../types';
+import { useAuth } from '../context/AuthContext';
 import './Auth.scss';
 
+interface RegisterFormData {
+  name: string;
+  email: string;
+  password: string;
+}
+
 const Register: React.FC = () => {
-  const [formData, setFormData] = useState<RegisterCredentials>({
+  const [formData, setFormData] = useState<RegisterFormData>({
     name: '',
     email: '',
     password: '',
@@ -14,9 +18,8 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { loading, error, isAuthenticated } = useAppSelector((state: any) => state.auth);
+  const { register, loading, error, isAuthenticated, clearError } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -26,9 +29,9 @@ const Register: React.FC = () => {
 
   useEffect(() => {
     return () => {
-      dispatch(clearError());
+      clearError();
     };
-  }, [dispatch]);
+  }, [clearError]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -64,15 +67,19 @@ const Register: React.FC = () => {
       return;
     }
 
-    await dispatch(register(formData));
+    try {
+      await register(formData.name, formData.email, formData.password);
+    } catch (err) {
+      // Error is already set in context
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev: any) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     // Clear error for this field
     if (errors[name]) {
-      setErrors((prev: any) => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 

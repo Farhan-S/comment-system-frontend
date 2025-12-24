@@ -4,15 +4,15 @@ import CommentForm from '../components/CommentForm';
 import CommentList from '../components/CommentList';
 import Pagination from '../components/Pagination';
 import SortMenu from '../components/SortMenu';
-import { logout } from '../features/auth/authSlice';
+import { useAuth } from '../context/AuthContext';
 import { fetchComments, setSortBy } from '../features/comments/commentSlice';
 import type { SortOption } from '../types';
 import './CommentsPage.scss';
 
 const CommentsPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
-  const { pagination, sortBy, loading } = useAppSelector((state) => state.comments);
+  const { user, logout } = useAuth();
+  const { pagination = { limit: 10, currentPage: 1, totalPages: 1, totalComments: 0 }, sortBy, loading } = useAppSelector((state) => state.comments);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -20,15 +20,15 @@ const CommentsPage: React.FC = () => {
     dispatch(
       fetchComments({
         page: currentPage,
-        limit: pagination.limit,
+        limit: pagination?.limit || 10,
         sort: sortBy,
         parentComment: null, // Only fetch top-level comments
       })
     );
-  }, [dispatch, currentPage, sortBy, pagination.limit]);
+  }, [dispatch, currentPage, sortBy, pagination?.limit]);
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    await logout();
   };
 
   const handleSortChange = (sort: SortOption) => {
@@ -65,7 +65,7 @@ const CommentsPage: React.FC = () => {
           <div className="comments-list-section">
             <div className="section-header">
               <h2>
-                Comments ({pagination.totalComments})
+                Comments ({pagination?.totalComments || 0})
               </h2>
               <SortMenu currentSort={sortBy} onSortChange={handleSortChange} />
             </div>
@@ -78,10 +78,10 @@ const CommentsPage: React.FC = () => {
             ) : (
               <>
                 <CommentList />
-                {pagination.totalPages > 1 && (
+                {(pagination?.totalPages || 0) > 1 && (
                   <Pagination
                     currentPage={currentPage}
-                    totalPages={pagination.totalPages}
+                    totalPages={pagination?.totalPages || 1}
                     onPageChange={handlePageChange}
                   />
                 )}

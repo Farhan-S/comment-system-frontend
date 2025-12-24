@@ -29,13 +29,19 @@ export interface RegisterCredentials {
 export interface Comment {
   _id: string;
   content: string;
-  user: User;
+  author: User | string; // Can be populated User object or just ID string
+  user?: User; // Legacy field name, some responses use this
+  authorDetails?: {
+    // For sorted responses
+    name: string;
+    email: string;
+  };
   parentComment: string | null;
   likes: string[];
   dislikes: string[];
-  likesCount: number;
-  dislikesCount: number;
-  repliesCount: number;
+  likesCount?: number;
+  dislikesCount?: number;
+  repliesCount?: number;
   createdAt: string;
   updatedAt: string;
 }

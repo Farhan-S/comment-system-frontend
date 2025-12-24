@@ -4,7 +4,7 @@ import CommentItem from './CommentItem';
 import './CommentList.scss';
 
 const CommentList: React.FC = () => {
-  const { comments, loading } = useAppSelector((state) => state.comments);
+  const { comments = [], loading } = useAppSelector((state) => state.comments);
 
   if (!loading && comments.length === 0) {
     return (

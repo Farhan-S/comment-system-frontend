@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
+import { useAuth } from '../context/AuthContext';
 import {
     deleteComment,
     dislikeComment,
@@ -25,12 +26,39 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false }) =
   const [loadingReplies, setLoadingReplies] = useState(false);
 
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
+  const { user } = useAuth();
   const { replyingTo } = useAppSelector((state) => state.comments);
 
-  const isOwner = user?._id === comment.user._id;
-  const hasLiked = comment.likes.includes(user?._id || '');
-  const hasDisliked = comment.dislikes.includes(user?._id || '');
+  // Helper to get author info from different response structures
+  const getAuthorInfo = () => {
+    if (comment.authorDetails) {
+      return {
+        id: typeof comment.author === 'string' ? comment.author : comment.author._id,
+        name: comment.authorDetails.name,
+        email: comment.authorDetails.email,
+      };
+    }
+    if (typeof comment.author === 'object') {
+      return {
+        id: comment.author._id,
+        name: comment.author.name,
+        email: comment.author.email,
+      };
+    }
+    if (comment.user) {
+      return {
+        id: comment.user._id,
+        name: comment.user.name,
+        email: comment.user.email,
+      };
+    }
+    return { id: '', name: 'Unknown User', email: '' };
+  };
+
+  const authorInfo = getAuthorInfo();
+  const isOwner = user?.id === authorInfo.id;
+  const hasLiked = comment.likes.includes(user?.id || '');
+  const hasDisliked = comment.dislikes.includes(user?.id || '');
   const isReplying = replyingTo === comment._id;
 
   const formatDate = (dateString: string) => {
@@ -129,9 +157,9 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false }) =
     <div className={`comment-item ${isReply ? 'reply' : ''}`}>
       <div className="comment-header">
         <div className="user-info">
-          <div className="avatar">{comment.user.name.charAt(0).toUpperCase()}</div>
+          <div className="avatar">{authorInfo.name.charAt(0).toUpperCase()}</div>
           <div className="user-details">
-            <span className="username">{comment.user.name}</span>
+            <span className="username">{authorInfo.name}</span>
             <span className="timestamp">{formatDate(comment.createdAt)}</span>
             {comment.updatedAt !== comment.createdAt && (
               <span className="edited">(edited)</span>
@@ -178,13 +206,13 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false }) =
             onClick={handleLike}
             className={`interaction-btn ${hasLiked ? 'active liked' : ''}`}
           >
-            👍 {comment.likesCount}
+            👍 {comment.likesCount ?? comment.likes.length}
           </button>
           <button
             onClick={handleDislike}
             className={`interaction-btn ${hasDisliked ? 'active disliked' : ''}`}
           >
-            👎 {comment.dislikesCount}
+            👎 {comment.dislikesCount ?? comment.dislikes.length}
           </button>
           {!isReply && (
             <button onClick={handleReply} className="interaction-btn">
@@ -193,7 +221,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isReply = false }) =
           )}
         </div>
 
-        {!isReply && comment.repliesCount > 0 && (
+        {!isReply && (comment.repliesCount || 0) > 0 && (
           <button onClick={loadReplies} className="show-replies-btn">
             {loadingReplies
               ? 'Loading...'
