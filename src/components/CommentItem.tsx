@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
-import { useAuth } from '../hooks/useAuth';
 import {
     deleteComment,
     dislikeComment,
@@ -9,6 +8,7 @@ import {
     setReplyingTo,
     updateComment,
 } from '../features/comments/commentSlice';
+import { useAuth } from '../hooks/useAuth';
 import type { Comment } from '../types';
 import CommentForm from './CommentForm';
 import './CommentItem.scss';

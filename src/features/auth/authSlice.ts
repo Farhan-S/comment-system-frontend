@@ -26,7 +26,9 @@ export const register = createAsyncThunk(
       const response = await authAPI.register(credentials);
       return response.data;
     } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
       return rejectWithValue(
         axiosError.response?.data?.message || "Registration failed"
       );
@@ -41,8 +43,12 @@ export const login = createAsyncThunk(
       const response = await authAPI.login(credentials);
       return response.data;
     } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || "Login failed");
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      return rejectWithValue(
+        axiosError.response?.data?.message || "Login failed"
+      );
     }
   }
 );
@@ -54,7 +60,9 @@ export const getCurrentUser = createAsyncThunk(
       const response = await authAPI.getCurrentUser();
       return response.data;
     } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
       return rejectWithValue(
         axiosError.response?.data?.message || "Failed to get user"
       );
