@@ -204,8 +204,12 @@ const commentSlice = createSlice({
       state.error = null;
     },
     addCommentOptimistic: (state, action: PayloadAction<Comment>) => {
-      state.comments.unshift(action.payload);
-      state.pagination.totalComments += 1;
+      // Prevent duplicate insertion if the comment already exists (same _id)
+      const exists = state.comments.some((c) => c._id === action.payload._id);
+      if (!exists) {
+        state.comments.unshift(action.payload);
+        state.pagination.totalComments += 1;
+      }
     },
     updateCommentOptimistic: (state, action: PayloadAction<Comment>) => {
       const index = state.comments.findIndex(
@@ -275,24 +279,22 @@ const commentSlice = createSlice({
 
     // Create comment
     builder
-      .addCase(createComment.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(createComment.fulfilled, (state, action) => {
-        state.loading = false;
         const responseData = action.payload.data || action.payload;
         const newComment = responseData.comment || responseData.data?.comment;
 
         // If it's a top-level comment, add it to the list
         if (newComment && !newComment.parentComment) {
-          state.comments.unshift(newComment);
-          state.pagination.totalComments += 1;
+          // Avoid duplicates when server emits the same comment via WebSocket
+          const already = state.comments.some((c) => c._id === newComment._id);
+          if (!already) {
+            state.comments.unshift(newComment);
+            state.pagination.totalComments += 1;
+          }
         }
         state.replyingTo = null;
       })
       .addCase(createComment.rejected, (state, action) => {
-        state.loading = false;
         state.error = action.payload as string;
       });
 

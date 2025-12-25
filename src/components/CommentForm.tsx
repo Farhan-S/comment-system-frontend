@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppDispatch, useAppSelector } from '../app/hooks';
+import { useAppDispatch } from '../app/hooks';
 import { createComment, setReplyingTo } from '../features/comments/commentSlice';
 import './CommentForm.scss';
 
@@ -12,7 +12,6 @@ const CommentForm: React.FC<CommentFormProps> = ({ parentCommentId = null, onSuc
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
   const dispatch = useAppDispatch();
-  const { loading } = useAppSelector((state) => state.comments);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +67,6 @@ const CommentForm: React.FC<CommentFormProps> = ({ parentCommentId = null, onSuc
         }}
         placeholder={parentCommentId ? 'Write a reply...' : 'What are your thoughts?'}
         className={error ? 'error' : ''}
-        disabled={loading}
         rows={parentCommentId ? 3 : 4}
         maxLength={1000}
       />
@@ -86,13 +84,12 @@ const CommentForm: React.FC<CommentFormProps> = ({ parentCommentId = null, onSuc
               type="button"
               onClick={handleCancel}
               className="cancel-button"
-              disabled={loading}
             >
               Cancel
             </button>
           )}
-          <button type="submit" className="submit-button" disabled={loading || !content.trim()}>
-            {loading ? 'Posting...' : parentCommentId ? 'Reply' : 'Post Comment'}
+          <button type="submit" className="submit-button" disabled={!content.trim()}>
+            {parentCommentId ? 'Reply' : 'Post Comment'}
           </button>
         </div>
       </div>
