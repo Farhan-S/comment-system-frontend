@@ -1,16 +1,16 @@
 {
   "schemaVersion": 2,
   "dockerfileLines": [
-    "FROM node:20-alpine AS builder",
-    "WORKDIR /app",
-    "COPY package*.json ./",
-    "RUN npm ci",
-    "COPY . .",
+    "FROM node:20-alpine",
+    "RUN mkdir -p /usr/src/app",
+    "WORKDIR /usr/src/app",
+    "COPY ./package.json /usr/src/app/",
+    "RUN npm install && npm cache clean --force",
+    "COPY ./ /usr/src/app",
     "RUN npm run build",
-    "FROM nginx:alpine",
-    "COPY --from=builder /app/dist /usr/share/nginx/html",
-    "COPY nginx.conf /etc/nginx/conf.d/default.conf",
-    "EXPOSE 3000",
-    "CMD [\"nginx\", \"-g\", \"daemon off;\"]"
+    "ENV NODE_ENV production",
+    "RUN npm install -g serve",
+    "EXPOSE 5173",
+    "CMD [\"serve\", \"-s\", \"dist\", \"-l\", \"5173\"]"
   ]
 }
