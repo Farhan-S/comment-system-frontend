@@ -45,8 +45,8 @@ const CommentForm: React.FC<CommentFormProps> = ({ parentCommentId = null, onSuc
       if (onSuccess) {
         onSuccess();
       }
-    } catch (err: any) {
-      setError(err || 'Failed to post comment');
+    } catch (err: unknown) {
+      setError(typeof err === 'string' ? err : 'Failed to post comment');
     }
   };
 

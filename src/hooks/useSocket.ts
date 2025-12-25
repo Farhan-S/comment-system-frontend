@@ -115,5 +115,6 @@ export const useSocket = () => {
     };
   }, [dispatch]);
 
-  return socketRef.current;
+  // Don't return the socket ref during render
+  // If components need access to the socket, use a context provider instead
 };

@@ -4,7 +4,7 @@ import CommentForm from '../components/CommentForm';
 import CommentList from '../components/CommentList';
 import Pagination from '../components/Pagination';
 import SortMenu from '../components/SortMenu';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { fetchComments, setSortBy } from '../features/comments/commentSlice';
 import { useSocket } from '../hooks/useSocket';
 import type { SortOption } from '../types';

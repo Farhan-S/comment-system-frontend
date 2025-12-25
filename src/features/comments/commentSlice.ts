@@ -46,9 +46,10 @@ export const fetchComments = createAsyncThunk(
     try {
       const response = await commentAPI.getComments(params);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch comments"
+        axiosError.response?.data?.message || "Failed to fetch comments"
       );
     }
   }
@@ -60,9 +61,10 @@ export const fetchCommentById = createAsyncThunk(
     try {
       const response = await commentAPI.getCommentById(id);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch comment"
+        axiosError.response?.data?.message || "Failed to fetch comment"
       );
     }
   }
@@ -85,9 +87,10 @@ export const fetchCommentReplies = createAsyncThunk(
         limit
       );
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch replies"
+        axiosError.response?.data?.message || "Failed to fetch replies"
       );
     }
   }
@@ -99,9 +102,10 @@ export const createComment = createAsyncThunk(
     try {
       const response = await commentAPI.createComment(data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(
-        error.response?.data?.message || "Failed to create comment"
+        axiosError.response?.data?.message || "Failed to create comment"
       );
     }
   }
@@ -116,9 +120,10 @@ export const updateComment = createAsyncThunk(
     try {
       const response = await commentAPI.updateComment(id, data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(
-        error.response?.data?.message || "Failed to update comment"
+        axiosError.response?.data?.message || "Failed to update comment"
       );
     }
   }
@@ -130,9 +135,10 @@ export const deleteComment = createAsyncThunk(
     try {
       await commentAPI.deleteComment(id);
       return id;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(
-        error.response?.data?.message || "Failed to delete comment"
+        axiosError.response?.data?.message || "Failed to delete comment"
       );
     }
   }
@@ -144,9 +150,10 @@ export const likeComment = createAsyncThunk(
     try {
       const response = await commentAPI.likeComment(id);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(
-        error.response?.data?.message || "Failed to like comment"
+        axiosError.response?.data?.message || "Failed to like comment"
       );
     }
   }
@@ -158,9 +165,10 @@ export const dislikeComment = createAsyncThunk(
     try {
       const response = await commentAPI.dislikeComment(id);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(
-        error.response?.data?.message || "Failed to dislike comment"
+        axiosError.response?.data?.message || "Failed to dislike comment"
       );
     }
   }

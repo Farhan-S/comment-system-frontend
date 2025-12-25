@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import './Auth.scss';
 
 interface RegisterFormData {
@@ -69,7 +69,7 @@ const Register: React.FC = () => {
 
     try {
       await register(formData.name, formData.email, formData.password);
-    } catch (err) {
+    } catch {
       // Error is already set in context
     }
   };

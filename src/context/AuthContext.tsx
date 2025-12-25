@@ -1,5 +1,6 @@
 import axios from 'axios';
-import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
+import { AuthContext, AuthContextType } from './AuthContextDefinition';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -17,27 +18,6 @@ interface User {
   name: string;
   email: string;
 }
-
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  loading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  clearError: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -65,9 +45,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsAuthenticated(true);
         console.log('Auth check successful, user:', response.data.data.user);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Not authenticated or token expired
-      console.log('Not authenticated:', error.response?.status);
+      const axiosError = error as { response?: { status?: number } };
+      console.log('Not authenticated:', axiosError.response?.status);
       setUser(null);
       setIsAuthenticated(false);
     } finally {
@@ -98,10 +79,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         throw new Error('Login failed');
       }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Login failed';
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const errorMessage = axiosError.response?.data?.message || 'Login failed';
       setError(errorMessage);
-      console.error('Login error:', errorMessage, error.response);
+      console.error('Login error:', errorMessage, axiosError.response);
       throw new Error(errorMessage);
     } finally {
       setLoading(false);
@@ -131,10 +113,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         throw new Error('Registration failed');
       }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Registration failed';
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const errorMessage = axiosError.response?.data?.message || 'Registration failed';
       setError(errorMessage);
-      console.error('Registration error:', errorMessage, error.response);
+      console.error('Registration error:', errorMessage, axiosError.response);
       throw new Error(errorMessage);
     } finally {
       setLoading(false);
