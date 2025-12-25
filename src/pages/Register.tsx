@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { useAuth } from '../hooks/useAuth';
 import './Auth.scss';
 
@@ -69,8 +70,11 @@ const Register: React.FC = () => {
 
     try {
       await register(formData.name, formData.email, formData.password);
-    } catch {
-      // Error is already set in context
+      toast.success('Account created successfully!');
+    } catch (err) {
+      // Extract the actual error message from the Error object
+      const errorMessage = err instanceof Error ? err.message : 'Registration failed. Please try again.';
+      toast.error(errorMessage);
     }
   };
 
@@ -100,6 +104,7 @@ const Register: React.FC = () => {
               name="name"
               value={formData.name}
               onChange={handleChange}
+              placeholder="Enter your full name"
               className={errors.name ? 'error' : ''}
               disabled={loading}
             />
@@ -114,6 +119,7 @@ const Register: React.FC = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
+              placeholder="Enter your email"
               className={errors.email ? 'error' : ''}
               disabled={loading}
             />
@@ -128,6 +134,7 @@ const Register: React.FC = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
+              placeholder="Create a password (min 6 characters)"
               className={errors.password ? 'error' : ''}
               disabled={loading}
             />
@@ -147,6 +154,7 @@ const Register: React.FC = () => {
                   setErrors((prev) => ({ ...prev, confirmPassword: '' }));
                 }
               }}
+              placeholder="Re-enter your password"
               className={errors.confirmPassword ? 'error' : ''}
               disabled={loading}
             />

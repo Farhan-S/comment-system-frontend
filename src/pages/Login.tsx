@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { useAuth } from '../hooks/useAuth';
 import './Auth.scss';
 
@@ -60,9 +61,12 @@ const Login: React.FC = () => {
       console.log('Attempting login with:', formData.email);
       await login(formData.email, formData.password);
       console.log('Login completed successfully');
+      toast.success('Login successful!');
     } catch (err) {
       console.error('Login failed:', err);
-      // Error is already set in context
+      // Extract the actual error message from the Error object
+      const errorMessage = err instanceof Error ? err.message : 'Login failed. Please try again.';
+      toast.error(errorMessage);
     }
   };
 
@@ -92,6 +96,7 @@ const Login: React.FC = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
+              placeholder="Enter your email"
               className={errors.email ? 'error' : ''}
               disabled={loading}
               autoComplete="email"
@@ -107,6 +112,7 @@ const Login: React.FC = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
+              placeholder="Enter your password"
               className={errors.password ? 'error' : ''}
               disabled={loading}
               autoComplete="current-password"
